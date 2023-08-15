@@ -45,7 +45,7 @@ struct AnimationIndices {
 #[derive(Component)]
 struct AnimationIndicesContainer {
     idle: AnimationIndices,
-    jump: AnimationIndices,
+    walk: AnimationIndices,
 }
 
 /// Component : Player Sprite Animation Timer
@@ -111,7 +111,6 @@ fn setup(
     texture_atlases.add(texture_atlas);
 
     let idle_sheet_image_handle : Handle<Image> = player_sprite_handles.handles[0].clone().typed();
-
     let idle_texture_atlas =
         TextureAtlas::from_grid(idle_sheet_image_handle, Vec2::new(80.0, 96.0), 10, 5, None, None);
 
@@ -119,44 +118,65 @@ fn setup(
         first: 0,
         last: 11,
     };
-    let player_jump_animation_indices = AnimationIndices {
-        first: 26,
-        last: 42,
+    let player_walk_animation_indices = AnimationIndices {
+        first: 0,
+        last: 9,
     };
     let player_animation_indices_container = AnimationIndicesContainer {
         idle: player_idle_animation_indices,
-        jump: player_jump_animation_indices,
+        walk: player_walk_animation_indices,
     };
 
 
-    let texture_atlas_handle: Handle<TextureAtlas> = texture_atlases.add(idle_texture_atlas);
+    let idle_texture_atlas_handle: Handle<TextureAtlas> = texture_atlases.add(idle_texture_atlas);
+
+    let walk_sheet_image_handle : Handle<Image> = player_sprite_handles.handles[1].clone().typed();
+
+    let walk_texture_atlas =
+        TextureAtlas::from_grid(walk_sheet_image_handle, Vec2::new(80.0, 96.0), 10, 2, None, None);
+
+    let texture_atlas_handle: Handle<TextureAtlas> = texture_atlases.add(walk_texture_atlas);
+
+    let player_texture_atlas_handles = PlayerTextureAtlasHandles {
+        idle_texture_atlas_handle: idle_texture_atlas_handle.clone(),
+        jump_texture_atlas_handle: texture_atlas_handle.clone(),
+    };
 
     commands.spawn(Camera2dBundle::default());
 
     commands.spawn((
         SpriteSheetBundle {
-            texture_atlas: texture_atlas_handle,
+            texture_atlas: idle_texture_atlas_handle,
             sprite: TextureAtlasSprite::new(player_animation_indices_container.idle.first),
             transform: Transform::from_scale(Vec3::splat(6.0)),
             ..default()
         },
         player_animation_indices_container,
         AnimationTimer(Timer::from_seconds(0.07, TimerMode::Repeating)),
+        player_texture_atlas_handles,
     ));
 }
 
 // System : Update Animate Player Sprites
 fn animate_sprite(
+    mut commands: Commands,
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
     mut query: Query<(
+        Entity,
         &AnimationIndicesContainer,
         &mut AnimationTimer,
         &mut TextureAtlasSprite,
+        &PlayerTextureAtlasHandles,
+        &mut Handle<TextureAtlas>
     )>,
 ) {
     if keyboard_input.pressed(KeyCode::A) {
-        for (indices, mut timer, mut sprite) in &mut query {
+        for (entity, indices, mut timer, mut sprite, player_texture_atlas_handles, texture_atlas_handle) in &mut query {
+
+            commands.entity(entity).remove::<Handle<TextureAtlas>>();
+            commands.entity(entity).insert(player_texture_atlas_handles.idle_texture_atlas_handle.clone());
+
             timer.tick(time.delta());
             if timer.just_finished() {
                 sprite.index = if sprite.index == indices.idle.last {
@@ -167,6 +187,27 @@ fn animate_sprite(
             }
         }
     }
+    
+    if keyboard_input.pressed(KeyCode::S) {
+        for (entity, indices, mut timer, mut sprite, player_texture_atlas_handles, mut texture_atlas_handle) in &mut query {
+
+            commands.entity(entity).remove::<Handle<TextureAtlas>>();
+            commands.entity(entity).insert(player_texture_atlas_handles.jump_texture_atlas_handle.clone());
+            
+            timer.tick(time.delta());
+            if timer.just_finished() {
+                sprite.index = if sprite.index == indices.walk.last {
+                    indices.walk.first
+                } else {
+                    sprite.index + 1
+                };
+            }
+        }
+    }
+
+    //TODO other poses
+
+    // TODO Bug Fix multiple key presses
     
 }
 
