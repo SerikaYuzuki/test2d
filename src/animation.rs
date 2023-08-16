@@ -110,7 +110,7 @@ fn setup(
     let texture_atlas = texture_atlas_builder.finish(&mut textures).unwrap();
     texture_atlases.add(texture_atlas);
 
-    let idle_sheet_image_handle : Handle<Image> = player_sprite_handles.handles[0].clone().typed();
+    let idle_sheet_image_handle : Handle<Image> = asset_server.get_handle("textures/tewi_material01.png");
     let idle_texture_atlas =
         TextureAtlas::from_grid(idle_sheet_image_handle, Vec2::new(80.0, 96.0), 10, 5, None, None);
 
@@ -130,7 +130,7 @@ fn setup(
 
     let idle_texture_atlas_handle: Handle<TextureAtlas> = texture_atlases.add(idle_texture_atlas);
 
-    let walk_sheet_image_handle : Handle<Image> = player_sprite_handles.handles[1].clone().typed();
+    let walk_sheet_image_handle : Handle<Image> = asset_server.get_handle("textures/tewi_material02.png");
 
     let walk_texture_atlas =
         TextureAtlas::from_grid(walk_sheet_image_handle, Vec2::new(80.0, 96.0), 10, 2, None, None);
@@ -168,11 +168,10 @@ fn animate_sprite(
         &mut AnimationTimer,
         &mut TextureAtlasSprite,
         &PlayerTextureAtlasHandles,
-        &mut Handle<TextureAtlas>
     )>,
 ) {
     if keyboard_input.pressed(KeyCode::A) {
-        for (entity, indices, mut timer, mut sprite, player_texture_atlas_handles, texture_atlas_handle) in &mut query {
+        for (entity, indices, mut timer, mut sprite, player_texture_atlas_handles) in &mut query {
 
             commands.entity(entity).remove::<Handle<TextureAtlas>>();
             commands.entity(entity).insert(player_texture_atlas_handles.idle_texture_atlas_handle.clone());
@@ -189,7 +188,7 @@ fn animate_sprite(
     }
     
     if keyboard_input.pressed(KeyCode::S) {
-        for (entity, indices, mut timer, mut sprite, player_texture_atlas_handles, mut texture_atlas_handle) in &mut query {
+        for (entity, indices, mut timer, mut sprite, player_texture_atlas_handles) in &mut query {
 
             commands.entity(entity).remove::<Handle<TextureAtlas>>();
             commands.entity(entity).insert(player_texture_atlas_handles.jump_texture_atlas_handle.clone());
@@ -208,6 +207,6 @@ fn animate_sprite(
     //TODO other poses
 
     // TODO Bug Fix multiple key presses
-    
+
 }
 
